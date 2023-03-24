@@ -155,13 +155,20 @@ class SnowflakeOfflineStore(OfflineStore):
             + '"'
         )
 
-        select_timestamps =  list(map(lambda field_name: f"date_part(epoch_second, {field_name}) as {field_name}", timestamp_columns)) if config.offline_store.convert_timestamp_columns else timestamp_columns
-
-        inner_field_string = (
-            '"'
-            + '", "'.join(join_key_columns + feature_name_columns + select_timestamps)
-            + '"'
-        )
+        if config.offline_store.convert_timestamp_columns:
+            select_timestamps =  list(map(lambda field_name: f"{field_name}::string as {field_name}", timestamp_columns))
+            inner_field_string = (
+                '"'
+                + '", "'.join(join_key_columns + feature_name_columns)
+                + '"'
+                + ", ".join(select_timestamps)
+            )
+        else:
+            inner_field_string = (
+                '"'
+                + '", "'.join(join_key_columns + feature_name_columns + timestamp_columns)
+                + '"'
+            )
 
         if data_source.snowflake_options.warehouse:
             config.offline_store.warehouse = data_source.snowflake_options.warehouse
