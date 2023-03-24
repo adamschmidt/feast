@@ -155,7 +155,7 @@ class SnowflakeOfflineStore(OfflineStore):
             + '"'
         )
 
-        select_timestamps =  map(lambda field_name: f"date_part(epoch_second, {field_name}) as {field_name}", timestamp_columns) if config.offline_store.convert_timestamp_columns else timestamp_columns
+        select_timestamps =  list(map(lambda field_name: f"date_part(epoch_second, {field_name}) as {field_name}", timestamp_columns)) if config.offline_store.convert_timestamp_columns else timestamp_columns
 
         inner_field_string = (
             '"'
