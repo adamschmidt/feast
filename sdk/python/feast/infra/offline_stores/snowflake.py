@@ -109,6 +109,9 @@ class SnowflakeOfflineStoreConfig(FeastConfigBaseModel):
     blob_export_location: Optional[str] = None
     """ Location (in S3, Google storage or Azure storage) where data is offloaded """
 
+    convert_timestamp_columns: Optional[bool] = None
+    """ Convert timestamp columns on export to a Parquet-supported format """
+
     class Config:
         allow_population_by_field_name = True
 
@@ -152,6 +155,14 @@ class SnowflakeOfflineStore(OfflineStore):
             + '"'
         )
 
+        select_timestamps =  map(lambda field_name: f"date_part(epoch_second, {field_name}) as {field_name}", timestamp_columns) if config.offline_store.convert_timestamp_columns else timestamp_columns
+
+        inner_field_string = (
+            '"'
+            + '", "'.join(join_key_columns + feature_name_columns + select_timestamps)
+            + '"'
+        )
+
         if data_source.snowflake_options.warehouse:
             config.offline_store.warehouse = data_source.snowflake_options.warehouse
 
@@ -165,7 +176,7 @@ class SnowflakeOfflineStore(OfflineStore):
                 {field_string}
                 {f''', TRIM({repr(DUMMY_ENTITY_VAL)}::VARIANT,'"') AS "{DUMMY_ENTITY_ID}"''' if not join_key_columns else ""}
             FROM (
-                SELECT {field_string},
+                SELECT {inner_field_string},
                 ROW_NUMBER() OVER({partition_by_join_key_string} ORDER BY {timestamp_desc_string}) AS "_feast_row"
                 FROM {from_expression}
                 WHERE "{timestamp_field}" BETWEEN TIMESTAMP '{start_date}' AND TIMESTAMP '{end_date}'
