@@ -160,7 +160,7 @@ class SnowflakeOfflineStore(OfflineStore):
             inner_field_string = (
                 '"'
                 + '", "'.join(join_key_columns + feature_name_columns)
-                + '"'
+                + '", '
                 + ", ".join(select_timestamps)
             )
         else:
