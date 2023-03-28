@@ -547,7 +547,7 @@ class SnowflakeRetrievalJob(RetrievalJob):
         self.to_snowflake(table)
 
         query = f"""
-            COPY INTO '{self.config.offline_store.blob_export_location}/{table}' FROM "{self.config.offline_store.database}"."{self.config.offline_store.schema_}"."{table}"\n
+            COPY INTO '{self.export_path}/{table}' FROM "{self.config.offline_store.database}"."{self.config.offline_store.schema_}"."{table}"\n
               STORAGE_INTEGRATION = {self.config.offline_store.storage_integration_name}\n
               FILE_FORMAT = (TYPE = PARQUET)
               DETAILED_OUTPUT = TRUE
