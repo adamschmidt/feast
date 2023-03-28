@@ -200,6 +200,9 @@ class BytewaxMaterializationEngine(BatchMaterializationEngine):
             "apiVersion": "v1",
             "metadata": {
                 "name": f"feast-{job_id}",
+                "labels": {
+                    "feast-bytewax-materializer": "configmap",
+                },
             },
             "data": {
                 "feature_store.yaml": feature_store_configuration,
@@ -255,6 +258,9 @@ class BytewaxMaterializationEngine(BatchMaterializationEngine):
             "metadata": {
                 "name": f"dataflow-{job_id}",
                 "namespace": namespace,
+                "labels": {
+                    "feast-bytewax-materializer": "job",
+                },
             },
             "spec": {
                 "ttlSecondsAfterFinished": 3600,
@@ -264,6 +270,9 @@ class BytewaxMaterializationEngine(BatchMaterializationEngine):
                 "template": {
                     "metadata": {
                         "annotations": self.batch_engine_config.annotations,
+                        "labels": {
+                            "feast-bytewax-materializer": "pod",
+                        },
                     },
                     "spec": {
                         "restartPolicy": "Never",
