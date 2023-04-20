@@ -3,6 +3,7 @@ from typing import List
 import pyarrow as pa
 import pyarrow.parquet as pq
 import s3fs
+import logging
 from bytewax.dataflow import Dataflow  # type: ignore
 from bytewax.execution import cluster_main
 from bytewax.inputs import ManualInputConfig, distribute
@@ -11,6 +12,8 @@ from tqdm import tqdm
 
 from feast import FeatureStore, FeatureView, RepoConfig
 from feast.utils import _convert_arrow_to_proto, _run_pyarrow_field_mapping
+
+logger = logging.getLogger(__name__)
 
 
 class BytewaxMaterializationDataflow:
@@ -25,11 +28,12 @@ class BytewaxMaterializationDataflow:
 
         self.feature_view = feature_view
         self.paths = paths
-
+        logger.info(f"Paths to process: {paths}")
         self._run_dataflow()
 
     def process_path(self, path):
         fs = s3fs.S3FileSystem()
+        logger.info(f"Processing path: {path}")
         dataset = pq.ParquetDataset(path, filesystem=fs, use_legacy_dataset=False)
         batches = []
         for fragment in dataset.fragments:
@@ -40,6 +44,7 @@ class BytewaxMaterializationDataflow:
 
     def input_builder(self, worker_index, worker_count, _state):
         worker_paths = distribute(self.paths, worker_index, worker_count)
+        logger.info(f"Worker paths: {worker_paths}")
         for path in worker_paths:
             yield None, path
 
@@ -63,12 +68,14 @@ class BytewaxMaterializationDataflow:
                 table, self.feature_view, join_key_to_value_type
             )
             provider = self.feature_store._get_provider()
+            logger.info(f"Processing {len(rows_to_write)} rows")
+
             with tqdm(total=len(rows_to_write)) as progress:
                 provider.online_write_batch(
                     config=self.config,
                     table=self.feature_view,
                     data=rows_to_write,
-                    progress=progress.update,
+                    #progress=progress.update,
                 )
 
         return output_fn

@@ -20,6 +20,7 @@ from feast.protos.feast.types.Value_pb2 import Value as ValueProto
 from feast.repo_config import RepoConfig
 from feast.usage import log_exceptions_and_usage
 
+logger = logging.getLogger(__name__)
 
 class PostgreSQLOnlineStoreConfig(PostgreSQLConfig):
     type: Literal["postgres"] = "postgres"
@@ -90,6 +91,8 @@ class PostgreSQLOnlineStore(OnlineStore):
                 )
                 if progress:
                     progress(len(cur_batch))
+
+            logger.info(f"Finished batch of {len(data)} records for feature view {table.name}")
 
     @log_exceptions_and_usage(online_store="postgres")
     def online_read(
