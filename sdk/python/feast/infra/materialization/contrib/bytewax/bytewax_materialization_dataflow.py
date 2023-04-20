@@ -75,7 +75,7 @@ class BytewaxMaterializationDataflow:
                     config=self.config,
                     table=self.feature_view,
                     data=rows_to_write,
-                    #progress=progress.update,
+                    progress=None,
                 )
 
         return output_fn
