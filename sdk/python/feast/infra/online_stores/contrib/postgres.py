@@ -49,6 +49,7 @@ class PostgreSQLOnlineStore(OnlineStore):
 
         with self._get_conn(config) as conn, conn.cursor() as cur:
             insert_values = []
+            logger.info(f"Converting data to insertable records")
             for entity_key, values, timestamp, created_ts in data:
                 entity_key_bin = serialize_entity_key(
                     entity_key,
@@ -69,6 +70,7 @@ class PostgreSQLOnlineStore(OnlineStore):
                         )
                     )
             # Control the batch so that we can update the progress
+            logger.info(f"Starting write of {len(insert_values)} records")
             batch_size = 5000
             for i in range(0, len(insert_values), batch_size):
                 cur_batch = insert_values[i : i + batch_size]
