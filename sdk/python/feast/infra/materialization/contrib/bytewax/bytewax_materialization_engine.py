@@ -61,6 +61,9 @@ class BytewaxMaterializationEngineConfig(FeastConfigBaseModel):
     include_security_context_capabilities: bool = True
     """ (optional)  Include security context capabilities in the init and job container spec """
 
+    parallelism: int = 20
+    """ (optional)  The number of pods that the materialization job runs in parallel """
+
 
 class BytewaxMaterializationEngine(BatchMaterializationEngine):
     def __init__(
@@ -273,7 +276,7 @@ class BytewaxMaterializationEngine(BatchMaterializationEngine):
             "spec": {
                 "ttlSecondsAfterFinished": 3600,
                 "completions": pods,
-                "parallelism": 10,
+                "parallelism": self.batch_engine_config.parallelism,
                 "completionMode": "Indexed",
                 "template": {
                     "metadata": {
