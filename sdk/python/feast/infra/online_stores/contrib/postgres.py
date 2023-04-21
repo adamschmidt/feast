@@ -51,24 +51,28 @@ class PostgreSQLOnlineStore(OnlineStore):
             insert_values = []
             logger.info(f"Converting data to insertable records")
             for entity_key, values, timestamp, created_ts in data:
-                entity_key_bin = serialize_entity_key(
-                    entity_key,
-                    entity_key_serialization_version=config.entity_key_serialization_version,
-                )
-                timestamp = _to_naive_utc(timestamp)
-                if created_ts is not None:
-                    created_ts = _to_naive_utc(created_ts)
-
-                for feature_name, val in values.items():
-                    insert_values.append(
-                        (
-                            entity_key_bin,
-                            feature_name,
-                            val.SerializeToString(),
-                            timestamp,
-                            created_ts,
-                        )
+                try:
+                    entity_key_bin = serialize_entity_key(
+                        entity_key,
+                        entity_key_serialization_version=config.entity_key_serialization_version,
                     )
+                    timestamp = _to_naive_utc(timestamp)
+                    if created_ts is not None:
+                        created_ts = _to_naive_utc(created_ts)
+
+                    for feature_name, val in values.items():
+                        insert_values.append(
+                            (
+                                entity_key_bin,
+                                feature_name,
+                                val.SerializeToString(),
+                                timestamp,
+                                created_ts,
+                            )
+                        )
+                except ValueError as e:
+                    logger.exception(f"Unable to serialize entity key '{entity_key}'")
+
             # Control the batch so that we can update the progress
             logger.info(f"Starting write of {len(insert_values)} records")
             batch_size = 5000
