@@ -273,7 +273,7 @@ class BytewaxMaterializationEngine(BatchMaterializationEngine):
             "spec": {
                 "ttlSecondsAfterFinished": 3600,
                 "completions": pods,
-                "parallelism": pods,
+                "parallelism": 10,
                 "completionMode": "Indexed",
                 "template": {
                     "metadata": {
