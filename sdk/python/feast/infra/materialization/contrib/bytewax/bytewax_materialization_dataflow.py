@@ -45,11 +45,9 @@ class BytewaxMaterializationDataflow:
         return batches
 
     def input_builder(self, worker_index, worker_count, _state):
-        worker_paths = distribute(self.paths, worker_index, worker_count)
         file_index = int(os.getenv("JOB_COMPLETION_INDEX"))
-        logger.info(f"Worker paths: {worker_paths}")
 
-        path = worker_paths[file_index]
+        path = self.paths[file_index]
         logger.info(f"Selected path: {path}")
 
         return [(None, path)]
