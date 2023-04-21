@@ -4,8 +4,10 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import s3fs
 import logging
+import os
+
 from bytewax.dataflow import Dataflow  # type: ignore
-from bytewax.execution import cluster_main
+from bytewax.execution import run_main
 from bytewax.inputs import ManualInputConfig, distribute
 from bytewax.outputs import ManualOutputConfig
 from tqdm import tqdm
@@ -44,11 +46,13 @@ class BytewaxMaterializationDataflow:
 
     def input_builder(self, worker_index, worker_count, _state):
         worker_paths = distribute(self.paths, worker_index, worker_count)
+        file_index = int(os.getenv("JOB_COMPLETION_INDEX"))
         logger.info(f"Worker paths: {worker_paths}")
-        for path in worker_paths:
-            yield None, path
 
-        return
+        path = worker_paths[file_index]
+        logger.info(f"Selected path: {path}")
+
+        return [(None, path)]
 
     def output_builder(self, worker_index, worker_count):
         def output_fn(batch):
@@ -85,4 +89,4 @@ class BytewaxMaterializationDataflow:
         flow.input("inp", ManualInputConfig(self.input_builder))
         flow.flat_map(self.process_path)
         flow.capture(ManualOutputConfig(self.output_builder))
-        cluster_main(flow, [], 0)
+        run_main(flow)
