@@ -70,15 +70,16 @@ class BytewaxMaterializationDataflow:
                 table, self.feature_view, join_key_to_value_type
             )
             provider = self.feature_store._get_provider()
-            logger.info(f"Processing {len(rows_to_write)} rows")
+            logger.info(f"Calling online write batch for {len(rows_to_write)} rows")
 
-            with tqdm(total=len(rows_to_write)) as progress:
-                provider.online_write_batch(
-                    config=self.config,
-                    table=self.feature_view,
-                    data=rows_to_write,
-                    progress=None,
-                )
+            # with tqdm(total=len(rows_to_write)) as progress:
+            provider.online_write_batch(
+                config=self.config,
+                table=self.feature_view,
+                data=rows_to_write,
+                progress=None,
+            )
+            logger.info(f"Done processing {len(rows_to_write)} rows")
 
         return output_fn
 
