@@ -61,6 +61,12 @@ class BytewaxMaterializationEngineConfig(FeastConfigBaseModel):
     include_security_context_capabilities: bool = True
     """ (optional)  Include security context capabilities in the init and job container spec """
 
+    parallelism: int = 20
+    """ (optional)  The number of pods that the materialization job runs in parallel """
+
+    image_pull_policy: StrictStr = "Always"
+    """ (optional) The pull policy to apply to the materialization job container."""
+
 
 class BytewaxMaterializationEngine(BatchMaterializationEngine):
     def __init__(
@@ -239,7 +245,7 @@ class BytewaxMaterializationEngine(BatchMaterializationEngine):
             },
             {
                 "name": "BYTEWAX_REPLICAS",
-                "value": f"{pods}",
+                "value": f"{self.batch_engine_config.parallelism}",
             },
             {
                 "name": "BYTEWAX_KEEP_CONTAINER_ALIVE",
@@ -273,7 +279,7 @@ class BytewaxMaterializationEngine(BatchMaterializationEngine):
             "spec": {
                 "ttlSecondsAfterFinished": 3600,
                 "completions": pods,
-                "parallelism": pods,
+                "parallelism": self.batch_engine_config.parallelism,
                 "completionMode": "Indexed",
                 "template": {
                     "metadata": {
@@ -287,44 +293,12 @@ class BytewaxMaterializationEngine(BatchMaterializationEngine):
                         "subdomain": f"dataflow-{job_id}",
                         "imagePullSecrets": self.batch_engine_config.image_pull_secrets,
                         "serviceAccountName": self.batch_engine_config.service_account_name,
-                        "initContainers": [
-                            {
-                                "env": [
-                                    {
-                                        "name": "BYTEWAX_REPLICAS",
-                                        "value": f"{pods}",
-                                    }
-                                ],
-                                "image": "busybox",
-                                "imagePullPolicy": "Always",
-                                "name": "init-hostfile",
-                                "resources": {},
-                                "securityContext": {
-                                    "allowPrivilegeEscalation": False,
-                                    "capabilities": securityContextCapabilities,
-                                    "readOnlyRootFilesystem": True,
-                                },
-                                "terminationMessagePath": "/dev/termination-log",
-                                "terminationMessagePolicy": "File",
-                                "volumeMounts": [
-                                    {"mountPath": "/etc/bytewax", "name": "hostfile"},
-                                    {
-                                        "mountPath": "/tmp/bytewax/",
-                                        "name": "python-files",
-                                    },
-                                    {
-                                        "mountPath": "/var/feast/",
-                                        "name": f"feast-{job_id}",
-                                    },
-                                ],
-                            }
-                        ],
                         "containers": [
                             {
                                 "command": ["sh", "-c", "sh ./entrypoint.sh"],
                                 "env": job_env,
                                 "image": self.batch_engine_config.image,
-                                "imagePullPolicy": "Always",
+                                "imagePullPolicy": self.batch_engine_config.image_pull_policy,
                                 "name": "process",
                                 "ports": [
                                     {
@@ -342,7 +316,6 @@ class BytewaxMaterializationEngine(BatchMaterializationEngine):
                                 "terminationMessagePath": "/dev/termination-log",
                                 "terminationMessagePolicy": "File",
                                 "volumeMounts": [
-                                    {"mountPath": "/etc/bytewax", "name": "hostfile"},
                                     {
                                         "mountPath": "/var/feast/",
                                         "name": f"feast-{job_id}",
@@ -351,14 +324,6 @@ class BytewaxMaterializationEngine(BatchMaterializationEngine):
                             }
                         ],
                         "volumes": [
-                            {"emptyDir": {}, "name": "hostfile"},
-                            {
-                                "configMap": {
-                                    "defaultMode": 420,
-                                    "name": f"feast-{job_id}",
-                                },
-                                "name": "python-files",
-                            },
                             {
                                 "configMap": {"name": f"feast-{job_id}"},
                                 "name": f"feast-{job_id}",
