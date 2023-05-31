@@ -64,6 +64,8 @@ class BytewaxMaterializationEngineConfig(FeastConfigBaseModel):
     parallelism: int = 20
     """ (optional)  The number of pods that the materialization job runs in parallel """
 
+    image_repository_prefix: StrictStr = ""
+    """ (optional)  The Docker image repository prefix to apply to supporting containers """
 
 class BytewaxMaterializationEngine(BatchMaterializationEngine):
     def __init__(
@@ -298,7 +300,7 @@ class BytewaxMaterializationEngine(BatchMaterializationEngine):
                                         "value": f"{pods}",
                                     }
                                 ],
-                                "image": "busybox",
+                                "image": f"{self.batch_engine_config.image_repository_prefix}busybox",
                                 "imagePullPolicy": "Always",
                                 "name": "init-hostfile",
                                 "resources": {},
